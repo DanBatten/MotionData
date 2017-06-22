@@ -15,8 +15,10 @@
 * Will output AE graph to Bezier curves.
 * ms timings, follwed by attribute, then value.
 
-*Works well for Opacity, Position, Rotation, Scale.* 
+*Works well for Opacity, Position, Rotation, Scale.*
+
 **Currently will not output shape/mask path data as the don't contain values that can translate to CSS.**
+
 *Will eventually expand to convert path data to SVG data.*
 
 
