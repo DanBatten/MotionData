@@ -36,12 +36,13 @@
 
 ## INSTALLATION
 
-Move .jsx file to the AfterEffect/Scripts/ScriptUI Panels folder.
-Once in AE, you will find the script at the bottom of the **Window** menu. 
+* Move .jsx file to the AfterEffect/Scripts/ScriptUI Panels folder.
+* Once in AE, you will find the script at the bottom of the **Window** menu. 
 
 ## TROUBLESHOOTING
 
-This script is still in development so there are many bugs to keep working through to make this thing amazing!
+*This script is still in development so there are many bugs to keep working through to make this thing amazing!*
+
 If the plugin stops outputting into the text field, close the plugin window, then re-open via the **Window** menu.
 
 If it is still broken, feel free to screen shot your comp with all of your keyframed attributes visible, and I will try my best to fix.
