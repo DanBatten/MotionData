@@ -1,4 +1,4 @@
-# Exporting After Effect Motion Data for Development!
+# Exporting After Effects Motion Data for Development!
 
 ### Currently has two different export modes: 
 * Motion Guidelines
