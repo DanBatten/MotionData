@@ -4,61 +4,68 @@
 
 clearOutput();
 
-var myWin = (this instanceof Panel) ? this : new Window("palette", "Create Motion Guidelines",undefined,{resizeable:true});
-var selectGroup = myWin.add("group",undefined,"SelectGroup");
-selectGroup.orientation = "row";
-var groupOne = myWin.add("group",undefined,"GroupOne");
-groupOne.orientation = "column";
-var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");
-var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");
-var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});
-var buttonGroup = groupOne.add("group",undefined,"buttonGroup");
-buttonGroup.orientation = "row";
-var executeButton = buttonGroup.add("button", [0,0,85,30], "Execute");
-var clearButton = buttonGroup.add("button", [0,0,85,30], "Clear");
-var editText = groupOne.add("edittext",[0,0,300,300],"Hello World",{multiline:true});
-
-radioButton1.value = true;
-
-
-
-
-var activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString;
+var activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString,editText;
 var space = " ";
 var lineReturn = "\r\n";
 var paragraph = "\r\n\r\n";
 var lineTab = "\t";
 var activeItem = app.project.activeItem;
 var writeIndex = '';
-
-var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS";
+var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS, C'MON GUYS";
 var trackDataInstructions = "Select layers you would like to export";
-description.text = moGuideInstructions;
 
+function InitUI (that){
+	var myWin = (that instanceof Panel) ? that : new Window("palette", "Create Motion Guidelines",undefined,{resizeable:true});
+	var selectGroup = myWin.add("group",undefined,"SelectGroup");
+	selectGroup.orientation = "row";
+	var groupOne = myWin.add("group",undefined,"GroupOne");
+	groupOne.orientation = "column";
+	var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");
+	var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");
+	var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});
+	var buttonGroup = groupOne.add("group",undefined,"buttonGroup");
+	buttonGroup.orientation = "row";
+	var executeButton = buttonGroup.add("button", [0,0,85,30], "Execute");
+	var clearButton = buttonGroup.add("button", [0,0,85,30], "Clear");
+	editText = groupOne.add("edittext",[0,0,300,300],"Hello World",{multiline:true});
 
-//myWin.center();
-myWin.layout.layout(true);
+	radioButton1.value = true;
 
-radioButton1.onClick = function(){
+	
 	description.text = moGuideInstructions;
-}
-radioButton2.onClick = function(){
-	description.text = trackDataInstructions;
-}
-clearButton.onClick = function(){
-	
-	editText.text = "Hello World";
+
+	myWin.layout.layout(true);
+
+	radioButton1.onClick = function(){
+		description.text = moGuideInstructions;
+	}
+	radioButton2.onClick = function(){
+		description.text = trackDataInstructions;
+	}
+	clearButton.onClick = function(){
+		
+		editText.text = "Hello World";
+	}
+
+	executeButton.onClick = function(){
+		if (radioButton1.value){
+			printMotionGuidelines();
+		}
+		if (radioButton2.value){
+			printTrackingData();
+		}
+		
+	}
 }
 
-executeButton.onClick = function(){
-	if (radioButton1.value){
-		printMotionGuidelines();
-	}
-	if (radioButton2.value){
-		printTrackingData();
-	}
-	
-}
+InitUI(this);
+
+
+
+
+
+
+
 
 Number.isInteger = Number.isInteger || function(value) {
   return typeof value === 'number' && 
