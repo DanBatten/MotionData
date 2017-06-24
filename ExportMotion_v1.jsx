@@ -11,7 +11,7 @@ var paragraph = "\r\n\r\n";
 var lineTab = "\t";
 var activeItem = app.project.activeItem;
 var writeIndex = '';
-var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS, C'MON GUYS";
+var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS";
 var trackDataInstructions = "Select layers you would like to export";
 
 function InitUI (that){
@@ -27,7 +27,7 @@ function InitUI (that){
 	buttonGroup.orientation = "row";
 	var executeButton = buttonGroup.add("button", [0,0,85,30], "Execute");
 	var clearButton = buttonGroup.add("button", [0,0,85,30], "Clear");
-	editText = groupOne.add("edittext",[0,0,300,300],"Hello World",{multiline:true});
+	editText = groupOne.add("edittext",[0,0,300,300],"Hello World",{multiline:true,resizeable:true});
 
 	radioButton1.value = true;
 
