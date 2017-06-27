@@ -4,6 +4,9 @@
 
 clearOutput();
 
+
+//GLOBALS
+
 var activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString,editText;
 var space = " ";
 var lineReturn = "\r\n";
@@ -13,15 +16,21 @@ var activeItem = app.project.activeItem;
 var writeIndex = '';
 var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS";
 var trackDataInstructions = "Select layers you would like to export";
+var exportPathInstructions = "Export Shape paths and animation as SVG's";
+
+//CREATE UI
 
 function InitUI (that){
 	var myWin = (that instanceof Panel) ? that : new Window("palette", "Create Motion Guidelines",undefined,{resizeable:true});
 	var selectGroup = myWin.add("group",undefined,"SelectGroup");
+	var selectGroup2 = myWin.add("group",undefined,"SelectGroup2");
 	selectGroup.orientation = "row";
+	selectGroup2.orientation = "row";
 	var groupOne = myWin.add("group",undefined,"GroupOne");
 	groupOne.orientation = "column";
 	var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");
 	var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");
+	
 	var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});
 	var buttonGroup = groupOne.add("group",undefined,"buttonGroup");
 	buttonGroup.orientation = "row";
@@ -42,6 +51,7 @@ function InitUI (that){
 	radioButton2.onClick = function(){
 		description.text = trackDataInstructions;
 	}
+	
 	clearButton.onClick = function(){
 		
 		editText.text = "Hello World";
@@ -54,24 +64,23 @@ function InitUI (that){
 		if (radioButton2.value){
 			printTrackingData();
 		}
-		
+			
 	}
 }
 
 InitUI(this);
 
+//HELPERS
 
-
-
-
-
-
-
+//polyfill
 Number.isInteger = Number.isInteger || function(value) {
   return typeof value === 'number' && 
     isFinite(value) && 
     Math.floor(value) === value;
 };
+
+
+//EXECUTE FUNCTIONS
 
 function printMotionGuidelines (){
 	
@@ -118,11 +127,11 @@ function printMotionGuidelines (){
 			
 			    if (property.propertyType == PropertyType.PROPERTY && property.canVaryOverTime && property.numKeys > 0){
 			    	
-			    	
+			    	writeString += lineReturn + property.name + lineReturn;
 			    	for (var j = 1; j <= property.numKeys; j++) {
 			    		
 			    		var t = (property.keyTime(j) * 1000) - compAnimStart;
-			    		writeString += t.toString() + "MS " + " -> " + property.name + " key" + j + ": " + property.keyValue(j).toString() + lineReturn;
+			    		writeString += t.toString() + "MS " + " - " + property.keyValue(j).toString() + lineReturn;
 			    		if(j % 2 === 0){
 
 			    			if(Number.isInteger(property.keyValue(j)) || Number.isInteger(property.keyValue(j)[0]) ){
@@ -174,7 +183,7 @@ function printMotionGuidelines (){
 								}
 
 							}else{
-								writeString += "Can't calculate bezier on path anim";
+								writeString += "Can't calculate bezier on path anim" + lineReturn;
 							}
 			    			
 			    		}
