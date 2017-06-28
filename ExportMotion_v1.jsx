@@ -136,7 +136,16 @@ function printMotionGuidelines (){
 			    	for (var j = 1; j <= property.numKeys; j++) {
 			    		
 			    		var t = (property.keyTime(j) * 1000) - compAnimStart;
-			    		writeString += t.toString() + "MS " + " - " + property.keyValue(j).toString() + lineReturn;
+			    		var keyValue = [];
+			    		if(property.keyValue(j)[0]){
+			    			for (var x = 0; x < property.keyValue(j).length; x++) {
+				    			keyValue.push(property.keyValue(j)[x].toFixed(0));
+				    		}
+			    		}else{
+			    			keyValue.push(property.keyValue(j));
+			    		}
+			    		
+			    		writeString += t.toString() + "MS " + " - " + keyValue.toString() + lineReturn;
 			    		if(j % 2 === 0){
 
 			    			if(Number.isInteger(property.keyValue(j)) || Number.isInteger(property.keyValue(j)[0]) ){
