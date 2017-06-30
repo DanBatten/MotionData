@@ -313,7 +313,7 @@ function printTrackingData (){
 }
 
 function exportPaths (){
-
+	var fillColor, strokeColor, strokeWidth, isClosed, pathID, shapeLayerName;
 	
 	if(activeItem != null && (activeItem instanceof CompItem)){
 		
@@ -326,10 +326,18 @@ function exportPaths (){
 
 		var selectedLayers = activeComp.layers;
 
+		
+
+
 		for(var i = 1; i <= selectedLayers.length; i++){
+
+
 			function checkLayer(curItem) {
 			    var curLayer = selectedLayers[i];
-			    findPath(curLayer);
+			    if(curLayer instanceof ShapeLayer){
+			    	findPath(curLayer);
+			    }
+			    
 			    return
 			}
 
@@ -341,23 +349,73 @@ function exportPaths (){
 			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
 			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }
 			 
-			    
-			
+			   	
+				var isFill = /^Fill/.test(property.name);
+				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
+					for (var a = 1; a < property.numProperties; a++) {
+						if(property.property(a).name === "Color"){
+							fillColor = property.property(a).value;
+						}
+					}
+				}
+				var isStroke = /^Stroke/.test(property.name);
+				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
+					for (var a = 1; a < property.numProperties; a++) {
+						if(property.property(a).name === "Color"){
+							writeString += "Stroke Color: " + property.property(a).value.toString() + lineReturn ;
+						}
+						if(property.property(a).name === "Stroke Width"){
+							writeString += "Stroke width: " + property.property(a).value.toString() + lineReturn;
+						}
+					}
+				}
 			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){
-			    	
+			    	 writeString += selectedLayers[i].name + lineReturn;
+			    	 //writeString += property.value.isClosed + lineReturn;
+			    	 writeString += "Vertices" + lineReturn;
 			    	for (var j = 0; j < property.value.vertices.length; j++) {
 			    		writeString += "(";
 			    		if(property.value.vertices[j][0]){
+			    			
 			    			for (var q = 0; q < property.value.vertices[j].length; q++) {
 			    				
 			    				if(q % 2 === 0){
-			    					writeString += property.value.vertices[j][q] + ",";
+			    					writeString += Math.round(property.value.vertices[j][q]) + ",";
 			    				}else{
-			    					writeString += property.value.vertices[j][q] + ")" + lineReturn;
+			    					writeString += Math.round(property.value.vertices[j][q]) + ")" + lineReturn;
 			    				}
 			    			}
-			    		}
-			    		
+			    		}	
+			    	}
+			    	 writeString += "in Tangents" + lineReturn;
+			    	for (var j = 0; j < property.value.inTangents.length; j++) {
+			    		writeString += "(";
+			    		if(property.value.inTangents[j][0]){
+			    			
+			    			for (var q = 0; q < property.value.inTangents[j].length; q++) {
+			    				
+			    				if(q % 2 === 0){
+			    					writeString += Math.round(property.value.inTangents[j][q]) + ",";
+			    				}else{
+			    					writeString += Math.round(property.value.inTangents[j][q]) + ")" + lineReturn;
+			    				}
+			    			}
+			    		}	
+			    	}
+			    	 writeString += "out Tangents" + lineReturn;
+			    	for (var j = 0; j < property.value.outTangents.length; j++) {
+			    		writeString += "(";
+			    		if(property.value.outTangents[j][0]){
+			    			
+			    			for (var q = 0; q < property.value.outTangents[j].length; q++) {
+			    				
+			    				if(q % 2 === 0){
+			    					writeString += Math.round(property.value.outTangents[j][q]) + ",";
+			    				}else{
+			    					writeString += Math.round(property.value.outTangents[j][q]) + ")" + lineReturn;
+			    				}
+			    			}
+			    		}	
 			    	}
 			    	// writeString += "found the fucking path " + property.value.vertices.length;
 			    }
