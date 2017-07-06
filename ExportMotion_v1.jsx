@@ -93,10 +93,16 @@ function adjustTangent(vertice,tang){
 	var result = [];
 	result.push(vertice[0] + tang[0]);
 	result.push(vertice[1] + tang[1]);
-	// for (var i = 0; i < vertice.length; i++) {
-	// 	result.push(vertice[i] + tang[i]);
-	// }
 	return result
+}
+function componentToHex(c) {
+	c = c*255;
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
 
@@ -348,15 +354,16 @@ function exportPaths (){
 		
 
 
-		for(var i = 1; i <= selectedLayers.length; i++){
-
-
+		for(var i = selectedLayers.length; i >= 1; i--){
 			function checkLayer(curItem) {
 			    var curLayer = selectedLayers[i];
 			    if(curLayer instanceof ShapeLayer){
+			    	
 			    	findPath(curLayer);
+			    	writeSVG();
+
+			    	
 			    }
-			    
 			    return
 			}
 
@@ -376,30 +383,28 @@ function exportPaths (){
 				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
 					for (var a = 1; a < property.numProperties; a++) {
 						if(property.property(a).name === "Color"){
-							fillColor = property.property(a).value;
+							fillColor = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);
 						}
 					}
 				}
-				var isStroke = /^Stroke/.test(property.name);
+				var isStroke = /Stroke+ +\d/.test(property.name);
 				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
+					
 					for (var a = 1; a < property.numProperties; a++) {
 						if(property.property(a).name === "Color"){
-							strokeColor  = property.property(a).value;
-						}else{
-							strokeColor = 'none';
+
+							strokeColor  = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);
+							
 						}
 						if(property.property(a).name === "Stroke Width"){
 							strokeWidth = property.property(a).value;
-						}else{
-							strokeWidth = 'none';
 						}
 					}
 				}
 
 			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){
-			    	 writeString += selectedLayers[i].name + lineReturn;
-			    	 //writeString += property.value.isClosed + lineReturn;
-			    	 //writeString += 'Vertices' + lineReturn;
+			    	 
+			    	 isClosed = property.value.closed;
 			    	for (var j = 0; j < property.value.vertices.length; j++) {
 
 			    		coOrds.push(property.value.vertices[j]);
@@ -416,10 +421,7 @@ function exportPaths (){
 			    		}else{
 			    			outTang.push(null);
 			    		}
-			    		
-			    	}
-			    	
-			    	
+			    	}	
 			    }
 			 
 			   
@@ -429,43 +431,52 @@ function exportPaths (){
 			        	findPath(property.property(d));
 			        }
 			    }
-			
-			}
-			
-			
 
-			
+			}
+			function writeSVG(){
+				
+				writeString += '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
+				writeString += lineTab + '<path id="' + shapeLayerName + '" d="M';
+
+				//Write to SVG format, adjusting zero point
+				var firstCoORd;
+				for (var i = 0; i < coOrds.length; i++) {
+					var newCoords,newIn,newOut;
+					newCoords = adjustZero(Math.round(coOrds[i][0]),Math.round(coOrds[i][1]));
+					newOut = adjustZero(Math.round(outTang[i][0]),Math.round(outTang[i][1]));
+					if(i === coOrds.length - 1){
+						newIn = adjustZero(Math.round(inTang[0][0]),Math.round(inTang[0][1]));
+					}else{
+						newIn = adjustZero(Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]));
+					}
+					if(i === 0){
+						firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
+					}
+					writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
+					writeString += 'C' + newOut[0].toString() + ',' + newOut[1].toString() + " ";
+					writeString += newIn[0].toString() + ',' + newIn[1].toString() + " ";
+					if(i === coOrds.length - 1 && isClosed){
+						writeString += firstCoORd;
+					}
+					
+					
+					
+				}
+				if(isClosed){
+					writeString += 'Z"';
+				}else{
+					writeString += '"';
+				}
+				
+				writeString += '></path></g>';
+				coOrds = [];
+				inTang = [];
+				outTang = [];
+			}	
 			checkLayer(activeComp);
-		}
-		writeString += '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
-		writeString += lineTab + '<path id="' + shapeLayerName + '" d="M';
-		var firstCoORd;
-		for (var i = 0; i < coOrds.length; i++) {
-			var newCoords,newIn,newOut;
-			newCoords = adjustZero(Math.round(coOrds[i][0]),Math.round(coOrds[i][1]));
-			newOut = adjustZero(Math.round(outTang[i][0]),Math.round(outTang[i][1]));
-			if(i === coOrds.length - 1){
-				newIn = adjustZero(Math.round(inTang[0][0]),Math.round(inTang[0][1]));
-			}else{
-				newIn = adjustZero(Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]));
-			}
-			
 
-			if(i === 0){
-				firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
-			}
-			writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
-			writeString += 'C' + newOut[0].toString() + ',' + newOut[1].toString() + " ";
-			writeString += newIn[0].toString() + ',' + newIn[1].toString() + " ";
-			if(i === coOrds.length - 1){
-				writeString += firstCoORd;
-			}
-			
-			
-			
 		}
-		writeString += 'Z"';
-		writeString += '></path>';
+		
 		editText.text = writeString;
 	}
 
