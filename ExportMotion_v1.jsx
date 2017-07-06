@@ -8,15 +8,15 @@ clearOutput();
 //GLOBALS
 
 var activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString,editText;
-var space = " ";
-var lineReturn = "\r\n";
-var paragraph = "\r\n\r\n";
-var lineTab = "\t";
+var space = ' ';
+var lineReturn = '\r\n';
+var paragraph = '\r\n\r\n';
+var lineTab = '\t';
 var activeItem = app.project.activeItem;
-var writeIndex = '';
-var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS";
-var trackDataInstructions = "Select layers you would like to export";
-var exportPathInstructions = "Export Shape paths and animation as SVG's";
+var writeIndex = ''
+var moGuideInstructions = 'Comp in and out defines timeframe' + lineReturn + 'Use 50fps Comp for clean values' + lineReturn + 'NAME YOUR LAYERS';
+var trackDataInstructions = 'Select layers you would like to export'
+var exportPathInstructions = 'Export Shape paths and animation as SVGs';
 
 //CREATE UI
 
@@ -83,6 +83,21 @@ Number.isInteger = Number.isInteger || function(value) {
     isFinite(value) && 
     Math.floor(value) === value;
 };
+function adjustZero(x,y){
+	var array = [];
+	array.push(x+(activeItem.width/2));
+	array.push(y+(activeItem.height/2));
+	return array  
+}
+function adjustTangent(vertice,tang){
+	var result = [];
+	result.push(vertice[0] + tang[0]);
+	result.push(vertice[1] + tang[1]);
+	// for (var i = 0; i < vertice.length; i++) {
+	// 	result.push(vertice[i] + tang[i]);
+	// }
+	return result
+}
 
 
 //EXECUTE FUNCTIONS
@@ -314,11 +329,15 @@ function printTrackingData (){
 
 function exportPaths (){
 	var fillColor, strokeColor, strokeWidth, isClosed, pathID, shapeLayerName;
+	var inTang = [];
+	var outTang = [];
+	var coOrds = [];
 	
 	if(activeItem != null && (activeItem instanceof CompItem)){
 		
-		writeString = "";
+		writeString = '';
 		activeComp = activeItem;
+		
 		activeCompName = activeComp.name;
 		fps = activeComp.time * 1000;
 		compAnimStart = activeComp.workAreaStart * 1000;
@@ -348,7 +367,10 @@ function exportPaths (){
 			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }
 			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
 			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }
-			 
+			 	
+			 	if(property instanceof ShapeLayer){
+			 		shapeLayerName = property.name;
+			 	}
 			   	
 				var isFill = /^Fill/.test(property.name);
 				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
@@ -362,62 +384,42 @@ function exportPaths (){
 				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
 					for (var a = 1; a < property.numProperties; a++) {
 						if(property.property(a).name === "Color"){
-							writeString += "Stroke Color: " + property.property(a).value.toString() + lineReturn ;
+							strokeColor  = property.property(a).value;
+						}else{
+							strokeColor = 'none';
 						}
 						if(property.property(a).name === "Stroke Width"){
-							writeString += "Stroke width: " + property.property(a).value.toString() + lineReturn;
+							strokeWidth = property.property(a).value;
+						}else{
+							strokeWidth = 'none';
 						}
 					}
 				}
+
 			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){
 			    	 writeString += selectedLayers[i].name + lineReturn;
 			    	 //writeString += property.value.isClosed + lineReturn;
-			    	 writeString += "Vertices" + lineReturn;
+			    	 //writeString += 'Vertices' + lineReturn;
 			    	for (var j = 0; j < property.value.vertices.length; j++) {
-			    		writeString += "(";
-			    		if(property.value.vertices[j][0]){
-			    			
-			    			for (var q = 0; q < property.value.vertices[j].length; q++) {
-			    				
-			    				if(q % 2 === 0){
-			    					writeString += Math.round(property.value.vertices[j][q]) + ",";
-			    				}else{
-			    					writeString += Math.round(property.value.vertices[j][q]) + ")" + lineReturn;
-			    				}
-			    			}
-			    		}	
+
+			    		coOrds.push(property.value.vertices[j]);
+			    		if(property.value.inTangents[j]){
+			    			var adjustIn = adjustTangent(property.value.vertices[j],property.value.inTangents[j]);
+			    			inTang.push(adjustIn);
+			    		}else{
+			    			inTang.push(null);
+			    		}
+
+			    		if(property.value.outTangents[j]){
+			    			var adjustOut = adjustTangent(property.value.vertices[j],property.value.outTangents[j]);
+			    			outTang.push(adjustOut);
+			    		}else{
+			    			outTang.push(null);
+			    		}
+			    		
 			    	}
-			    	 writeString += "in Tangents" + lineReturn;
-			    	for (var j = 0; j < property.value.inTangents.length; j++) {
-			    		writeString += "(";
-			    		if(property.value.inTangents[j][0]){
-			    			
-			    			for (var q = 0; q < property.value.inTangents[j].length; q++) {
-			    				
-			    				if(q % 2 === 0){
-			    					writeString += Math.round(property.value.inTangents[j][q]) + ",";
-			    				}else{
-			    					writeString += Math.round(property.value.inTangents[j][q]) + ")" + lineReturn;
-			    				}
-			    			}
-			    		}	
-			    	}
-			    	 writeString += "out Tangents" + lineReturn;
-			    	for (var j = 0; j < property.value.outTangents.length; j++) {
-			    		writeString += "(";
-			    		if(property.value.outTangents[j][0]){
-			    			
-			    			for (var q = 0; q < property.value.outTangents[j].length; q++) {
-			    				
-			    				if(q % 2 === 0){
-			    					writeString += Math.round(property.value.outTangents[j][q]) + ",";
-			    				}else{
-			    					writeString += Math.round(property.value.outTangents[j][q]) + ")" + lineReturn;
-			    				}
-			    			}
-			    		}	
-			    	}
-			    	// writeString += "found the fucking path " + property.value.vertices.length;
+			    	
+			    	
 			    }
 			 
 			   
@@ -432,32 +434,38 @@ function exportPaths (){
 			
 			
 
-			// function findPath(layer){
-				
-				
-			// 	if(layer instanceof ShapeLayer){	
-
-			// 		var contents = layer.property("ADBE Root Vectors Group");
-
-					
-			// 		writeString += "SHAPE: " + layer.name + lineReturn;
-			// 		writeString += contents.property(1).property(4).name;
-			// 		while(contents){
-
-			// 			contents = walkProperties(contents);
-			// 			writeString += contents.name + lineReturn;
-			// 		}
-				
-				
-			// 	}else{
-			// 		writeString += Layer.name + " is not a shape layer" + lineReturn;
-			// 	}
-
-
-				
-			// }
+			
 			checkLayer(activeComp);
 		}
+		writeString += '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
+		writeString += lineTab + '<path id="' + shapeLayerName + '" d="M';
+		var firstCoORd;
+		for (var i = 0; i < coOrds.length; i++) {
+			var newCoords,newIn,newOut;
+			newCoords = adjustZero(Math.round(coOrds[i][0]),Math.round(coOrds[i][1]));
+			newOut = adjustZero(Math.round(outTang[i][0]),Math.round(outTang[i][1]));
+			if(i === coOrds.length - 1){
+				newIn = adjustZero(Math.round(inTang[0][0]),Math.round(inTang[0][1]));
+			}else{
+				newIn = adjustZero(Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]));
+			}
+			
+
+			if(i === 0){
+				firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
+			}
+			writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
+			writeString += 'C' + newOut[0].toString() + ',' + newOut[1].toString() + " ";
+			writeString += newIn[0].toString() + ',' + newIn[1].toString() + " ";
+			if(i === coOrds.length - 1){
+				writeString += firstCoORd;
+			}
+			
+			
+			
+		}
+		writeString += 'Z"';
+		writeString += '></path>';
 		editText.text = writeString;
 	}
 
