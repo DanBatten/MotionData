@@ -13,9 +13,11 @@ var lineReturn = '\r\n';
 var paragraph = '\r\n\r\n';
 var lineTab = '\t';
 var writeIndex = '';
+
 var moGuideInstructions = 'Comp in and out defines timeframe' + lineReturn + 'Use 50fps Comp for clean values' + lineReturn + 'NAME YOUR LAYERS';
 var trackDataInstructions = 'Select layers you would like to export';
 var exportPathInstructions = 'Export Shape paths and animation as SVGs';
+
 
 //CREATE UI
 
@@ -30,6 +32,7 @@ function InitUI (that){
 	var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");
 	var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");
 	var radioButton3 = selectGroup.add("radioButton", undefined, "Export Shape");
+
 	var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});
 	var buttonGroup = groupOne.add("group",undefined,"buttonGroup");
 	buttonGroup.orientation = "row";
@@ -50,9 +53,11 @@ function InitUI (that){
 	radioButton2.onClick = function(){
 		description.text = trackDataInstructions;
 	}
+
 	radioButton3.onClick = function(){
 		description.text = exportPathInstructions;
 	}
+
 	clearButton.onClick = function(){
 		
 		editText.text = "Hello World";
@@ -65,6 +70,7 @@ function InitUI (that){
 		if (radioButton2.value){
 			printTrackingData();
 		}
+
 		if (radioButton3.value){
 			exportPaths();
 
@@ -103,6 +109,9 @@ function componentToHex(c) {
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
+
+
+//EXECUTE FUNCTIONS
 
 
 //EXECUTE FUNCTIONS
@@ -156,6 +165,7 @@ function printMotionGuidelines (){
 			    	for (var j = 1; j <= property.numKeys; j++) {
 			    		
 			    		var t = (property.keyTime(j) * 1000) - compAnimStart;
+
 			    		var keyValue = [];
 			    		if(property.keyValue(j)[0]){
 			    			for (var x = 0; x < property.keyValue(j).length; x++) {
@@ -166,6 +176,7 @@ function printMotionGuidelines (){
 			    		}
 			    		
 			    		writeString += t.toString() + "MS " + " - " + keyValue.toString() + lineReturn;
+
 			    		if(j % 2 === 0){
 
 			    			if(Number.isInteger(property.keyValue(j)) || Number.isInteger(property.keyValue(j)[0]) ){
