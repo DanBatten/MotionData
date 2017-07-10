@@ -12,10 +12,9 @@ var space = ' ';
 var lineReturn = '\r\n';
 var paragraph = '\r\n\r\n';
 var lineTab = '\t';
-var activeItem = app.project.activeItem;
-var writeIndex = ''
+var writeIndex = '';
 var moGuideInstructions = 'Comp in and out defines timeframe' + lineReturn + 'Use 50fps Comp for clean values' + lineReturn + 'NAME YOUR LAYERS';
-var trackDataInstructions = 'Select layers you would like to export'
+var trackDataInstructions = 'Select layers you would like to export';
 var exportPathInstructions = 'Export Shape paths and animation as SVGs';
 
 //CREATE UI
@@ -109,7 +108,7 @@ function rgbToHex(r, g, b) {
 //EXECUTE FUNCTIONS
 
 function printMotionGuidelines (){
-	
+	var activeItem = app.project.activeItem;
 	if (activeItem != null && (activeItem instanceof CompItem)){
 		testString = "";
 		writeString = "";
@@ -249,7 +248,7 @@ function printMotionGuidelines (){
 }
 
 function printTrackingData (){
-	
+	var activeItem = app.project.activeItem;
 	if (activeItem != null && (activeItem instanceof CompItem)){
 		testString = "";
 		writeString = '';
@@ -334,14 +333,23 @@ function printTrackingData (){
 }
 
 function exportPaths (){
+	var activeItem = app.project.activeItem;
 	var fillColor, strokeColor, strokeWidth, isClosed, pathID, shapeLayerName;
+	var compWidth = activeItem.width;
+	var compHeight = activeItem.height;
 	var inTang = [];
 	var outTang = [];
 	var coOrds = [];
+
 	
 	if(activeItem != null && (activeItem instanceof CompItem)){
 		
 		writeString = '';
+		writeString += '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + lineReturn;
+		writeString += '<svg width="' + compWidth + 'px" height="' + compHeight + 'px" viewBox="0 0 ' + compWidth + ' ' + compHeight + '" version="1.1"';
+		writeString += ' xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' + lineReturn;
+		writeString += lineTab + '<title>' + activeComp.name + '</title>' + lineReturn;
+		writeString += lineTab + '<desc>Created by Gin Lane</desc>' + lineReturn;
 		activeComp = activeItem;
 		
 		activeCompName = activeComp.name;
@@ -435,8 +443,8 @@ function exportPaths (){
 			}
 			function writeSVG(){
 				
-				writeString += '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
-				writeString += lineTab + '<path id="' + shapeLayerName + '" d="M';
+				writeString += lineTab + '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
+				writeString += lineTab + lineTab + '<path id="' + shapeLayerName + '" d="M';
 
 				//Write to SVG format, adjusting zero point
 				var firstCoORd;
@@ -468,7 +476,9 @@ function exportPaths (){
 					writeString += '"';
 				}
 				
-				writeString += '></path></g>';
+				writeString += '></path>'+lineReturn;
+				writeString += lineTab + '</g>' + lineReturn;
+				
 				coOrds = [];
 				inTang = [];
 				outTang = [];
@@ -476,7 +486,7 @@ function exportPaths (){
 			checkLayer(activeComp);
 
 		}
-		
+		writeString += '</svg>';
 		editText.text = writeString;
 	}
 
