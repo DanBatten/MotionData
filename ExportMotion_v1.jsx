@@ -8,15 +8,16 @@ clearOutput();
 //GLOBALS
 
 var activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString,editText;
-var space = " ";
-var lineReturn = "\r\n";
-var paragraph = "\r\n\r\n";
-var lineTab = "\t";
-var activeItem = app.project.activeItem;
+var space = ' ';
+var lineReturn = '\r\n';
+var paragraph = '\r\n\r\n';
+var lineTab = '\t';
 var writeIndex = '';
-var moGuideInstructions = "Comp in and out defines timeframe" + lineReturn + "Use 50fps Comp for clean values" + lineReturn + "NAME YOUR LAYERS";
-var trackDataInstructions = "Select layers you would like to export";
-var exportPathInstructions = "Export Shape paths and animation as SVG's";
+
+var moGuideInstructions = 'Comp in and out defines timeframe' + lineReturn + 'Use 50fps Comp for clean values' + lineReturn + 'NAME YOUR LAYERS';
+var trackDataInstructions = 'Select layers you would like to export';
+var exportPathInstructions = 'Export Shape paths and animation as SVGs';
+
 
 //CREATE UI
 
@@ -30,7 +31,8 @@ function InitUI (that){
 	groupOne.orientation = "column";
 	var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");
 	var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");
-	
+	var radioButton3 = selectGroup.add("radioButton", undefined, "Export Shape");
+
 	var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});
 	var buttonGroup = groupOne.add("group",undefined,"buttonGroup");
 	buttonGroup.orientation = "row";
@@ -51,7 +53,11 @@ function InitUI (that){
 	radioButton2.onClick = function(){
 		description.text = trackDataInstructions;
 	}
-	
+
+	radioButton3.onClick = function(){
+		description.text = exportPathInstructions;
+	}
+
 	clearButton.onClick = function(){
 		
 		editText.text = "Hello World";
@@ -64,7 +70,11 @@ function InitUI (that){
 		if (radioButton2.value){
 			printTrackingData();
 		}
-			
+
+		if (radioButton3.value){
+			exportPaths();
+
+		}	
 	}
 }
 
@@ -78,12 +88,36 @@ Number.isInteger = Number.isInteger || function(value) {
     isFinite(value) && 
     Math.floor(value) === value;
 };
+function adjustZero(x,y){
+	var array = [];
+	array.push(x+(activeItem.width/2));
+	array.push(y+(activeItem.height/2));
+	return array  
+}
+function adjustTangent(vertice,tang){
+	var result = [];
+	result.push(vertice[0] + tang[0]);
+	result.push(vertice[1] + tang[1]);
+	return result
+}
+function componentToHex(c) {
+	c = c*255;
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+
+//EXECUTE FUNCTIONS
 
 
 //EXECUTE FUNCTIONS
 
 function printMotionGuidelines (){
-	
+	var activeItem = app.project.activeItem;
 	if (activeItem != null && (activeItem instanceof CompItem)){
 		testString = "";
 		writeString = "";
@@ -131,7 +165,18 @@ function printMotionGuidelines (){
 			    	for (var j = 1; j <= property.numKeys; j++) {
 			    		
 			    		var t = (property.keyTime(j) * 1000) - compAnimStart;
-			    		writeString += t.toString() + "MS " + " - " + property.keyValue(j).toString() + lineReturn;
+
+			    		var keyValue = [];
+			    		if(property.keyValue(j)[0]){
+			    			for (var x = 0; x < property.keyValue(j).length; x++) {
+				    			keyValue.push(property.keyValue(j)[x].toFixed(0));
+				    		}
+			    		}else{
+			    			keyValue.push(property.keyValue(j));
+			    		}
+			    		
+			    		writeString += t.toString() + "MS " + " - " + keyValue.toString() + lineReturn;
+
 			    		if(j % 2 === 0){
 
 			    			if(Number.isInteger(property.keyValue(j)) || Number.isInteger(property.keyValue(j)[0]) ){
@@ -214,7 +259,7 @@ function printMotionGuidelines (){
 }
 
 function printTrackingData (){
-	
+	var activeItem = app.project.activeItem;
 	if (activeItem != null && (activeItem instanceof CompItem)){
 		testString = "";
 		writeString = '';
@@ -296,6 +341,166 @@ function printTrackingData (){
 		editText.text = writeIndex + lineReturn + writeString;
 	}
 	
+}
+
+function exportPaths (){
+	var activeItem = app.project.activeItem;
+	var fillColor, strokeColor, strokeWidth, isClosed, pathID, shapeLayerName;
+	var compWidth = activeItem.width;
+	var compHeight = activeItem.height;
+	var inTang = [];
+	var outTang = [];
+	var coOrds = [];
+
+	
+	if(activeItem != null && (activeItem instanceof CompItem)){
+		
+		writeString = '';
+		writeString += '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + lineReturn;
+		writeString += '<svg width="' + compWidth + 'px" height="' + compHeight + 'px" viewBox="0 0 ' + compWidth + ' ' + compHeight + '" version="1.1"';
+		writeString += ' xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' + lineReturn;
+		writeString += lineTab + '<title>' + activeComp.name + '</title>' + lineReturn;
+		writeString += lineTab + '<desc>Created by Gin Lane</desc>' + lineReturn;
+		activeComp = activeItem;
+		
+		activeCompName = activeComp.name;
+		fps = activeComp.time * 1000;
+		compAnimStart = activeComp.workAreaStart * 1000;
+		compAnimDur = activeComp.workAreaDuration * 1000;
+
+		var selectedLayers = activeComp.layers;
+
+		
+
+
+		for(var i = selectedLayers.length; i >= 1; i--){
+			function checkLayer(curItem) {
+			    var curLayer = selectedLayers[i];
+			    if(curLayer instanceof ShapeLayer){
+			    	
+			    	findPath(curLayer);
+			    	writeSVG();
+
+			    	
+			    }
+			    return
+			}
+
+			function findPath(property) {
+			   
+			   
+			    var propTypeString = "Unknown";
+			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }
+			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
+			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }
+			 	
+			 	if(property instanceof ShapeLayer){
+			 		shapeLayerName = property.name;
+			 	}
+			   	
+				var isFill = /^Fill/.test(property.name);
+				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
+					for (var a = 1; a < property.numProperties; a++) {
+						if(property.property(a).name === "Color"){
+							fillColor = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);
+						}
+					}
+				}
+				var isStroke = /Stroke+ +\d/.test(property.name);
+				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
+					
+					for (var a = 1; a < property.numProperties; a++) {
+						if(property.property(a).name === "Color"){
+
+							strokeColor  = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);
+							
+						}
+						if(property.property(a).name === "Stroke Width"){
+							strokeWidth = property.property(a).value;
+						}
+					}
+				}
+
+			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){
+			    	 
+			    	 isClosed = property.value.closed;
+			    	for (var j = 0; j < property.value.vertices.length; j++) {
+
+			    		coOrds.push(property.value.vertices[j]);
+			    		if(property.value.inTangents[j]){
+			    			var adjustIn = adjustTangent(property.value.vertices[j],property.value.inTangents[j]);
+			    			inTang.push(adjustIn);
+			    		}else{
+			    			inTang.push(null);
+			    		}
+
+			    		if(property.value.outTangents[j]){
+			    			var adjustOut = adjustTangent(property.value.vertices[j],property.value.outTangents[j]);
+			    			outTang.push(adjustOut);
+			    		}else{
+			    			outTang.push(null);
+			    		}
+			    	}	
+			    }
+			 
+			   
+			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {
+			        
+			        for (var d = 1; d <= property.numProperties; d++) {
+			        	findPath(property.property(d));
+			        }
+			    }
+
+			}
+			function writeSVG(){
+				
+				writeString += lineTab + '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
+				writeString += lineTab + lineTab + '<path id="' + shapeLayerName + '" d="M';
+
+				//Write to SVG format, adjusting zero point
+				var firstCoORd;
+				for (var i = 0; i < coOrds.length; i++) {
+					var newCoords,newIn,newOut;
+					newCoords = adjustZero(Math.round(coOrds[i][0]),Math.round(coOrds[i][1]));
+					newOut = adjustZero(Math.round(outTang[i][0]),Math.round(outTang[i][1]));
+					if(i === coOrds.length - 1){
+						newIn = adjustZero(Math.round(inTang[0][0]),Math.round(inTang[0][1]));
+					}else{
+						newIn = adjustZero(Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]));
+					}
+					if(i === 0){
+						firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
+					}
+					writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
+					writeString += 'C' + newOut[0].toString() + ',' + newOut[1].toString() + " ";
+					writeString += newIn[0].toString() + ',' + newIn[1].toString() + " ";
+					if(i === coOrds.length - 1 && isClosed){
+						writeString += firstCoORd;
+					}
+					
+					
+					
+				}
+				if(isClosed){
+					writeString += 'Z"';
+				}else{
+					writeString += '"';
+				}
+				
+				writeString += '></path>'+lineReturn;
+				writeString += lineTab + '</g>' + lineReturn;
+				
+				coOrds = [];
+				inTang = [];
+				outTang = [];
+			}	
+			checkLayer(activeComp);
+
+		}
+		writeString += '</svg>';
+		editText.text = writeString;
+	}
+
 }
 
 
