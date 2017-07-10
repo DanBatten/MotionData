@@ -47,4 +47,11 @@ If the plugin stops outputting into the text field, close the plugin window, the
 
 If it is still broken, feel free to screen shot your comp with all of your keyframed attributes visible, and I will try my best to fix.
 
+## EXPORT PATH
 
+#### Works well for exporting custom shapes to development for web use.
+
+* Will take your shape layer path with stroke width, stroke color, and fill color.
+* Exports out to SVG format.
+
+*Currently does not support animation, coming very soon though!!
