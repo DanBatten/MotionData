@@ -47,7 +47,7 @@ If the plugin stops outputting into the text field, close the plugin window, the
 
 If it is still broken, feel free to screen shot your comp with all of your keyframed attributes visible, and I will try my best to fix.
 
-## EXPORT PATH
+## EXPORT SHAPE
 
 #### Works well for exporting custom shapes to development for web use.
 
