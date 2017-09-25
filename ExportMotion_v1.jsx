@@ -214,7 +214,7 @@ function printMotionGuidelines (){
 									y2 = 1+x2*(property.keyInTemporalEase(j)[0].speed / avSpeed);
 									x2 = 1-x2;
 								}
-								if (val1==val2){
+								if (val1==val2 && property.maxValue){
 									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;
 									y1 = (-x1)*property.keyOutTemporalEase(j-1)[0].speed / ((property.maxValue-property.minValue)/(t2-t1)) ;
 									x2 = property.keyInTemporalEase(j)[0].influence /100;
@@ -345,7 +345,11 @@ function printTrackingData (){
 
 function exportPaths (){
 	var activeItem = app.project.activeItem;
-	var fillColor, strokeColor, strokeWidth, isClosed, pathID, shapeLayerName;
+	activeComp = activeItem;
+	var fillColor = "";
+	var strokeColor = "";
+	var strokeWidth = "";
+	var isClosed, pathID, shapeLayerName;
 	var compWidth = activeItem.width;
 	var compHeight = activeItem.height;
 	var inTang = [];
@@ -388,7 +392,7 @@ function exportPaths (){
 
 			function findPath(property) {
 			   
-			   
+			   // alert("finding path");
 			    var propTypeString = "Unknown";
 			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }
 			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
@@ -453,6 +457,7 @@ function exportPaths (){
 
 			}
 			function writeSVG(){
+
 				
 				writeString += lineTab + '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
 				writeString += lineTab + lineTab + '<path id="' + shapeLayerName + '" d="M';
