@@ -1,516 +1,1 @@
-//exports layer name, property, value, and anim timing for keyframed layers.
-//Used to output to a motion guidline doc.
-
-
-clearOutput();
-
-
-//GLOBALS
-
-var activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString,editText;
-var space = ' ';
-var lineReturn = '\r\n';
-var paragraph = '\r\n\r\n';
-var lineTab = '\t';
-var writeIndex = '';
-
-var moGuideInstructions = 'Comp in and out defines timeframe' + lineReturn + 'Use 50fps Comp for clean values' + lineReturn + 'NAME YOUR LAYERS';
-var trackDataInstructions = 'Select layers you would like to export';
-var exportPathInstructions = 'Export Shape paths and animation as SVGs';
-
-
-//CREATE UI
-
-function InitUI (that){
-	var myWin = (that instanceof Panel) ? that : new Window("palette", "Create Motion Guidelines",undefined,{resizeable:true});
-	var selectGroup = myWin.add("group",undefined,"SelectGroup");
-	var selectGroup2 = myWin.add("group",undefined,"SelectGroup2");
-	selectGroup.orientation = "row";
-	selectGroup2.orientation = "row";
-	var groupOne = myWin.add("group",undefined,"GroupOne");
-	groupOne.orientation = "column";
-	var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");
-	var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");
-	var radioButton3 = selectGroup.add("radioButton", undefined, "Export Shape");
-
-	var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});
-	var buttonGroup = groupOne.add("group",undefined,"buttonGroup");
-	buttonGroup.orientation = "row";
-	var executeButton = buttonGroup.add("button", [0,0,85,30], "Execute");
-	var clearButton = buttonGroup.add("button", [0,0,85,30], "Clear");
-	editText = groupOne.add("edittext",[0,0,300,300],"Hello World",{multiline:true,resizeable:true});
-
-	radioButton1.value = true;
-
-	
-	description.text = moGuideInstructions;
-
-	myWin.layout.layout(true);
-
-	radioButton1.onClick = function(){
-		description.text = moGuideInstructions;
-	}
-	radioButton2.onClick = function(){
-		description.text = trackDataInstructions;
-	}
-
-	radioButton3.onClick = function(){
-		description.text = exportPathInstructions;
-	}
-
-	clearButton.onClick = function(){
-		
-		editText.text = "Hello World";
-	}
-
-	executeButton.onClick = function(){
-		if (radioButton1.value){
-			printMotionGuidelines();
-		}
-		if (radioButton2.value){
-			printTrackingData();
-		}
-
-		if (radioButton3.value){
-			exportPaths();
-
-		}	
-	}
-}
-
-InitUI(this);
-
-//HELPERS
-
-//polyfill
-Number.isInteger = Number.isInteger || function(value) {
-  return typeof value === 'number' && 
-    isFinite(value) && 
-    Math.floor(value) === value;
-};
-function adjustZero(x,y){
-	var array = [];
-	array.push(x+(activeItem.width/2));
-	array.push(y+(activeItem.height/2));
-	return array  
-}
-function adjustTangent(vertice,tang){
-	var result = [];
-	result.push(vertice[0] + tang[0]);
-	result.push(vertice[1] + tang[1]);
-	return result
-}
-function componentToHex(c) {
-	c = c*255;
-    var hex = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
-}
-
-function rgbToHex(r, g, b) {
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-}
-
-
-//EXECUTE FUNCTIONS
-
-
-//EXECUTE FUNCTIONS
-
-function printMotionGuidelines (){
-	var activeItem = app.project.activeItem;
-	if (activeItem != null && (activeItem instanceof CompItem)){
-		testString = "";
-		writeString = "";
-		activeComp = activeItem;
-		activeCompName = activeComp.name;
-		fps = activeComp.frameRate;
-		timeMS = activeComp.time * 1000;
-		compAnimStart = activeComp.workAreaStart * 1000;
-		compAnimDur = activeComp.workAreaDuration * 1000;
-
-		writeString = activeCompName + lineReturn + "Total Anim time " + compAnimDur + "MS" + lineReturn;
-		
-		
-		var selectedLayers = activeComp.layers;
-
-		
-		for (var i = 1; i <= selectedLayers.length; i++) {
-			writeString += paragraph + selectedLayers[i].name;
-			var numProps = selectedLayers[i].numProperties;
-
-			
-			
-			function findProperties(curItem) {
-			    var curLayer = selectedLayers[i];
-			    var report = "";
-
-			    findKeys(curLayer);
-			    
-			    return
-			}
-			 
-			function findKeys(property) {
-			   
-			    
-			    var propTypeString = "Unknown";
-			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }
-			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
-			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }
-			 
-			    
-			
-			    if (property.propertyType == PropertyType.PROPERTY && property.canVaryOverTime && property.numKeys > 0){
-			    	
-			    	writeString += lineReturn + property.name + lineReturn;
-			    	for (var j = 1; j <= property.numKeys; j++) {
-			    		
-			    		var t = (property.keyTime(j) * 1000) - compAnimStart;
-
-			    		var keyValue = [];
-			    		if(property.keyValue(j)[0]){
-			    			for (var x = 0; x < property.keyValue(j).length; x++) {
-				    			keyValue.push(property.keyValue(j)[x].toFixed(0));
-				    		}
-			    		}else{
-			    			keyValue.push(property.keyValue(j));
-			    		}
-			    		
-			    		writeString += t.toString() + "MS " + " - " + keyValue.toString() + lineReturn;
-
-			    		if(j % 2 === 0){
-
-			    			if(Number.isInteger(property.keyValue(j)) || Number.isInteger(property.keyValue(j)[0]) ){
-				    			var x1,x2,y1,y2;
-				    			var t1 = property.keyTime(j-1);
-				    			var t2 = property.keyTime(j);
-				    			if (Number.isInteger(property.keyValue(j)[0])){
-				    				var val1 = property.keyValue(j-1)[0] + property.keyValue(j-1)[1];
-									var val2 = property.keyValue(j)[0] + property.keyValue(j)[1];
-									if(property.keyValue(j)[2]){
-										val1 += property.keyValue(j-1)[2];
-										val2 += property.keyValue(j)[2];
-									}
-				    			}else{
-				    				var val1 = property.keyValue(j-1);
-									var val2 = property.keyValue(j);
-				    			}
-
-								
-								var delta_t = t2-t1;
-								var delta = val2-val1;
-								var avSpeed = Math.abs(val2-val1)/(t2-t1);
-								 
-								if (val1<val2){    
-									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;
-									y1 = x1*property.keyOutTemporalEase(j-1)[0].speed / avSpeed;
-									     
-									x2 = 1-property.keyInTemporalEase(j)[0].influence /100;
-									y2 = 1-(1-x2)*(property.keyInTemporalEase(j)[0].speed / avSpeed);
-								}
-								if (val2<val1){
-									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;
-									y1 = (-x1)*property.keyOutTemporalEase(j-1)[0].speed / avSpeed;
-									x2 = property.keyInTemporalEase(j)[0].influence /100;
-									y2 = 1+x2*(property.keyInTemporalEase(j)[0].speed / avSpeed);
-									x2 = 1-x2;
-								}
-								if (val1==val2 && property.maxValue){
-									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;
-									y1 = (-x1)*property.keyOutTemporalEase(j-1)[0].speed / ((property.maxValue-property.minValue)/(t2-t1)) ;
-									x2 = property.keyInTemporalEase(j)[0].influence /100;
-									y2 = 1+x2*(property.keyInTemporalEase(j)[0].speed / ((property.maxValue-property.minValue)/(t2-t1)));
-									x2 = 1-x2;
-								}
-								if (x1 === y1 && x2 === y2){
-									writeString += "Linear";
-								}else{
-									writeString += "Cubic-bezier(" + x1.toFixed(2) + ", " + y1.toFixed(2) + ", " + x2.toFixed(2) + ", " + y2.toFixed(2)  + ")" + lineReturn;
-								}
-
-							}else{
-								writeString += "Can't calculate bezier on path anim" + lineReturn;
-							}
-			    			
-			    		}
-			    	}
-			    	
-			    }
-			 
-			   
-			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {
-			        
-			        for (var d = 1; d <= property.numProperties; d++) {
-			        	findKeys(property.property(d));
-			        }
-			    }
-			
-			}
-			writeString += paragraph;
-			findProperties(activeComp);
-			 
-			
-		
-
-			
-		}
-		
-		editText.text = writeString;
-	}
-}
-
-function printTrackingData (){
-	var activeItem = app.project.activeItem;
-	if (activeItem != null && (activeItem instanceof CompItem)){
-		testString = "";
-		writeString = '';
-		writeIndex = '// FILE CONTAINS THE FOLLOWING:'
-		activeComp = activeItem;
-		activeCompName = activeComp.name;
-		fps = activeComp.frameRate;
-		timeMS = activeComp.time * 1000;
-		compAnimStart = activeComp.workAreaStart * 1000;
-		compAnimDur = activeComp.workAreaDuration * 1000;
-
-		//writeString = activeCompName + "Track{ ";
-		
-		
-		var selectedLayers = activeComp.layers;
-		
-		
-		for (var i = 1; i <= selectedLayers.length; i++) {
-			// writeString += lineReturn + selectedLayers[i].name;
-			var numProps = selectedLayers[i].numProperties;
-
-			
-
-			function findProperties(curItem) {
-			    var curLayer = selectedLayers[i];
-			    var report = "";
-
-			    findKeys(curLayer);
-			    //alert(report);
-			    return
-			}
-			 
-			function findKeys(property) {
-			   
-			   
-			    var propTypeString = "Unknown";
-			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }
-			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
-			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }
-			 
-			    
-			
-			    if (property.propertyType == PropertyType.PROPERTY && property.canVaryOverTime && property.numKeys > 0){
-			    	writeString += lineReturn + selectedLayers[i].name;
-			    	writeString += property.name + ' = {';
-			    	writeIndex += lineReturn + '// ' + selectedLayers[i].name + property.name;
-			    	for (var j = 1; j <= property.numKeys; j++) {
-			    		var t = (property.keyTime(j) * 1000) - compAnimStart;
-			    		var frameCounter = j-1;
-			    		if(property.keyValue(j)[0]){
-			    			writeString += lineReturn + lineTab  + frameCounter.toString() + ': [' + property.keyValue(j)[0].toString() + ", " + property.keyValue(j)[1].toString() + ", " + property.keyValue(j)[2].toString() + '],';
-			    		}else{
-			    			writeString += lineReturn + lineTab  + frameCounter.toString() + ': [' + property.keyValue(j).toString() + '],';
-			    		}
-			    		
-			    	}
-			    	writeString = writeString.slice(0,-1);
-			    	writeString += lineReturn + '}' + lineReturn;
-			    }
-			 
-			   
-			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {
-			        
-			        for (var d = 1; d <= property.numProperties; d++) {
-			        	findKeys(property.property(d));
-			        }
-			    }
-			
-			}
-			
-			findProperties(activeComp);
-			 
-			
-		
-
-			
-		}
-		
-		editText.text = writeIndex + lineReturn + writeString;
-	}
-	
-}
-
-function exportPaths (){
-	var activeItem = app.project.activeItem;
-	activeComp = activeItem;
-	var fillColor = "";
-	var strokeColor = "";
-	var strokeWidth = "";
-	var isClosed, pathID, shapeLayerName;
-	var compWidth = activeItem.width;
-	var compHeight = activeItem.height;
-	var inTang = [];
-	var outTang = [];
-	var coOrds = [];
-
-	
-	if(activeItem != null && (activeItem instanceof CompItem)){
-		
-		writeString = '';
-		writeString += '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + lineReturn;
-		writeString += '<svg width="' + compWidth + 'px" height="' + compHeight + 'px" viewBox="0 0 ' + compWidth + ' ' + compHeight + '" version="1.1"';
-		writeString += ' xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' + lineReturn;
-		writeString += lineTab + '<title>' + activeComp.name + '</title>' + lineReturn;
-		writeString += lineTab + '<desc>Created by Gin Lane</desc>' + lineReturn;
-		activeComp = activeItem;
-		
-		activeCompName = activeComp.name;
-		fps = activeComp.time * 1000;
-		compAnimStart = activeComp.workAreaStart * 1000;
-		compAnimDur = activeComp.workAreaDuration * 1000;
-
-		var selectedLayers = activeComp.layers;
-
-		
-
-
-		for(var i = selectedLayers.length; i >= 1; i--){
-			function checkLayer(curItem) {
-			    var curLayer = selectedLayers[i];
-			    if(curLayer instanceof ShapeLayer){
-			    	
-			    	findPath(curLayer);
-			    	writeSVG();
-
-			    	
-			    }
-			    return
-			}
-
-			function findPath(property) {
-			   
-			   // alert("finding path");
-			    var propTypeString = "Unknown";
-			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }
-			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }
-			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }
-			 	
-			 	if(property instanceof ShapeLayer){
-			 		shapeLayerName = property.name;
-			 	}
-			   	
-				var isFill = /^Fill/.test(property.name);
-				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
-					for (var a = 1; a < property.numProperties; a++) {
-						if(property.property(a).name === "Color"){
-							fillColor = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);
-						}
-					}
-				}
-				var isStroke = /Stroke+ +\d/.test(property.name);
-				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){
-					
-					for (var a = 1; a < property.numProperties; a++) {
-						if(property.property(a).name === "Color"){
-
-							strokeColor  = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);
-							
-						}
-						if(property.property(a).name === "Stroke Width"){
-							strokeWidth = property.property(a).value;
-						}
-					}
-				}
-
-			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){
-			    	 
-			    	 isClosed = property.value.closed;
-			    	for (var j = 0; j < property.value.vertices.length; j++) {
-
-			    		coOrds.push(property.value.vertices[j]);
-			    		if(property.value.inTangents[j]){
-			    			var adjustIn = adjustTangent(property.value.vertices[j],property.value.inTangents[j]);
-			    			inTang.push(adjustIn);
-			    		}else{
-			    			inTang.push(null);
-			    		}
-
-			    		if(property.value.outTangents[j]){
-			    			var adjustOut = adjustTangent(property.value.vertices[j],property.value.outTangents[j]);
-			    			outTang.push(adjustOut);
-			    		}else{
-			    			outTang.push(null);
-			    		}
-			    	}	
-			    }
-			 
-			   
-			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {
-			        
-			        for (var d = 1; d <= property.numProperties; d++) {
-			        	findPath(property.property(d));
-			        }
-			    }
-
-			}
-			function writeSVG(){
-
-				
-				writeString += lineTab + '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;
-				writeString += lineTab + lineTab + '<path id="' + shapeLayerName + '" d="M';
-
-				//Write to SVG format, adjusting zero point
-				var firstCoORd;
-				for (var i = 0; i < coOrds.length; i++) {
-					var newCoords,newIn,newOut;
-					newCoords = adjustZero(Math.round(coOrds[i][0]),Math.round(coOrds[i][1]));
-					newOut = adjustZero(Math.round(outTang[i][0]),Math.round(outTang[i][1]));
-					if(i === coOrds.length - 1){
-						newIn = adjustZero(Math.round(inTang[0][0]),Math.round(inTang[0][1]));
-					}else{
-						newIn = adjustZero(Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]));
-					}
-					if(i === 0){
-						firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
-					}
-					writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + " ";
-					writeString += 'C' + newOut[0].toString() + ',' + newOut[1].toString() + " ";
-					writeString += newIn[0].toString() + ',' + newIn[1].toString() + " ";
-					if(i === coOrds.length - 1 && isClosed){
-						writeString += firstCoORd;
-					}
-					
-					
-					
-				}
-				if(isClosed){
-					writeString += 'Z"';
-				}else{
-					writeString += '"';
-				}
-				
-				writeString += '></path>'+lineReturn;
-				writeString += lineTab + '</g>' + lineReturn;
-				
-				coOrds = [];
-				inTang = [];
-				outTang = [];
-			}	
-			checkLayer(activeComp);
-
-		}
-		writeString += '</svg>';
-		editText.text = writeString;
-	}
-
-}
-
-
-
-
-
-
-
+﻿//exports layer name, property, value, and anim timing for keyframed layers.//Used to output to a motion guidline doc.clearOutput();//GLOBALSvar activeCompName, activeComp, fps, timeMS, compAnimStart, compAnimDur, writeString,testString,editText;var space = ' ';var lineReturn = '\r\n';var paragraph = '\r\n\r\n';var lineTab = '\t';var writeIndex = '';var moGuideInstructions = 'Comp in and out defines timeframe' + lineReturn + 'Use 50fps Comp for clean values' + lineReturn + 'NAME YOUR LAYERS';var trackDataInstructions = 'Select layers you would like to export';var exportPathInstructions = 'Export Shape paths and animation as SVGs';var exportCanvasShapeInstructions = 'Export Shapes to canvas';//CREATE UIfunction InitUI (that){	var myWin = (that instanceof Panel) ? that : new Window("palette", "Create Motion Guidelines",undefined,{resizeable:true});	var selectGroup = myWin.add("group",[0,0,20,40],"SelectGroup");	var selectGroup2 = myWin.add("group",undefined,"SelectGroup2");	selectGroup.orientation = "row";	selectGroup2.orientation = "row";	var groupOne = myWin.add("group",undefined,"GroupOne");	groupOne.orientation = "column";	var radioButton1 = selectGroup.add("radioButton", undefined, "Motion Guidelines");	var radioButton2 = selectGroup.add("radioButton", undefined, "Tracking data");	var radioButton3 = selectGroup.add("radioButton", undefined, "Export Shape");	var radioButton4 = selectGroup.add("radioButton", undefined, "Export2Canvas");	var description = groupOne.add("staticText",[0,0,250,50],"Hello World",{multiline:true});	var buttonGroup = groupOne.add("group",undefined,"buttonGroup");	buttonGroup.orientation = "row";	var executeButton = buttonGroup.add("button", [0,0,85,30], "Execute");	var clearButton = buttonGroup.add("button", [0,0,85,30], "Clear");	editText = groupOne.add("edittext",[0,0,300,300],"Hello World",{multiline:true,resizeable:true});	radioButton4.value = true;		description.text = moGuideInstructions;	myWin.layout.layout(true);	radioButton1.onClick = function(){		description.text = moGuideInstructions;	}	radioButton2.onClick = function(){		description.text = trackDataInstructions;	}	radioButton3.onClick = function(){		description.text = exportPathInstructions;	}	radioButton4.onClick = function(){		description.text = exportCanvasShapeInstructions;	}	clearButton.onClick = function(){				editText.text = "Hello World";	}	executeButton.onClick = function(){		if (radioButton1.value){			printMotionGuidelines();		}		if (radioButton2.value){			printTrackingData();		}		if (radioButton3.value){			exportPaths();		}		if (radioButton4.value){			exportCanvasShape();		}		}}InitUI(this);//HELPERS//polyfillfunction removeSpace(strng){	strng = strng.replace(" ","_");	return strng}Number.isInteger = Number.isInteger || function(value) {  return typeof value === 'number' &&     isFinite(value) &&     Math.floor(value) === value;};function adjustZero(activeItem,x,y){	var array = [];	array.push(x+(activeItem.width/2));	array.push(y+(activeItem.height/2));	return array  }function adjustZerojs(activeItem,x,y,layer){	var array = [];	array.push(x+(layer.property("Position").value[0]));	array.push(y+(layer.property("Position").value[1]));	return array  }function adjustTangent(vertice,tang){	var result = [];	result.push(vertice[0] + tang[0]);	result.push(vertice[1] + tang[1]);	return result}function adjustTangentJS(vertice,tang){	var result = [];	result.push(vertice[0] + tang[0]);	result.push(vertice[1] + tang[1]);	return result}function componentToHex(c) {	c = c*255;    var hex = c.toString(16);    return hex.length == 1 ? "0" + hex : hex;}function rgbToHex(r, g, b) {    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);}function createTab(num){	var text = '\t';	var output = '';	for (var i = 0; i < num; i++) {		output += text;	}	return output}//EXECUTE FUNCTIONS//EXECUTE FUNCTIONSfunction printMotionGuidelines (){	var activeItem = app.project.activeItem;	if (activeItem != null && (activeItem instanceof CompItem)){		testString = "";		writeString = "";		activeComp = activeItem;		activeCompName = activeComp.name;		fps = activeComp.frameRate;		timeMS = activeComp.time * 1000;		compAnimStart = activeComp.workAreaStart * 1000;		compAnimDur = activeComp.workAreaDuration * 1000;		writeString = activeCompName + lineReturn + "Total Anim time " + compAnimDur + "MS" + lineReturn;						var selectedLayers = activeComp.layers;				for (var i = 1; i <= selectedLayers.length; i++) {			writeString += paragraph + selectedLayers[i].name;			var numProps = selectedLayers[i].numProperties;									function findProperties(curItem) {			    var curLayer = selectedLayers[i];			    var report = "";			    findKeys(curLayer);			    			    return			}			 			function findKeys(property) {			   			    			    var propTypeString = "Unknown";			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }			 			    						    if (property.propertyType == PropertyType.PROPERTY && property.canVaryOverTime && property.numKeys > 0){			    				    	writeString += lineReturn + property.name + lineReturn;			    	for (var j = 1; j <= property.numKeys; j++) {			    					    		var t = (property.keyTime(j) * 1000) - compAnimStart;			    		var keyValue = [];			    		if(property.keyValue(j)[0]){			    			for (var x = 0; x < property.keyValue(j).length; x++) {				    			keyValue.push(property.keyValue(j)[x].toFixed(0));				    		}			    		}else{			    			keyValue.push(property.keyValue(j));			    		}			    					    		writeString += t.toString() + "MS " + " - " + keyValue.toString() + lineReturn;			    		if(j % 2 === 0){			    			if(Number.isInteger(property.keyValue(j)) || Number.isInteger(property.keyValue(j)[0]) ){				    			var x1,x2,y1,y2;				    			var t1 = property.keyTime(j-1);				    			var t2 = property.keyTime(j);				    			if (Number.isInteger(property.keyValue(j)[0])){				    				var val1 = property.keyValue(j-1)[0] + property.keyValue(j-1)[1];									var val2 = property.keyValue(j)[0] + property.keyValue(j)[1];									if(property.keyValue(j)[2]){										val1 += property.keyValue(j-1)[2];										val2 += property.keyValue(j)[2];									}				    			}else{				    				var val1 = property.keyValue(j-1);									var val2 = property.keyValue(j);				    			}																var delta_t = t2-t1;								var delta = val2-val1;								var avSpeed = Math.abs(val2-val1)/(t2-t1);								 								if (val1<val2){    									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;									y1 = x1*property.keyOutTemporalEase(j-1)[0].speed / avSpeed;									     									x2 = 1-property.keyInTemporalEase(j)[0].influence /100;									y2 = 1-(1-x2)*(property.keyInTemporalEase(j)[0].speed / avSpeed);								}								if (val2<val1){									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;									y1 = (-x1)*property.keyOutTemporalEase(j-1)[0].speed / avSpeed;									x2 = property.keyInTemporalEase(j)[0].influence /100;									y2 = 1+x2*(property.keyInTemporalEase(j)[0].speed / avSpeed);									x2 = 1-x2;								}								if (val1==val2 && property.maxValue){									x1 = property.keyOutTemporalEase(j-1)[0].influence /100;									y1 = (-x1)*property.keyOutTemporalEase(j-1)[0].speed / ((property.maxValue-property.minValue)/(t2-t1)) ;									x2 = property.keyInTemporalEase(j)[0].influence /100;									y2 = 1+x2*(property.keyInTemporalEase(j)[0].speed / ((property.maxValue-property.minValue)/(t2-t1)));									x2 = 1-x2;								}								if (x1 === y1 && x2 === y2){									writeString += "Linear";								}else{									writeString += "Cubic-bezier(" + x1.toFixed(2) + ", " + y1.toFixed(2) + ", " + x2.toFixed(2) + ", " + y2.toFixed(2)  + ")" + lineReturn;								}							}else{								writeString += "Can't calculate bezier on path anim" + lineReturn;							}			    						    		}			    	}			    				    }			 			   			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {			        			        for (var d = 1; d <= property.numProperties; d++) {			        	findKeys(property.property(d));			        }			    }						}			writeString += paragraph;			findProperties(activeComp);			 										}				editText.text = writeString;	}}function printTrackingData (){	var activeItem = app.project.activeItem;	if (activeItem != null && (activeItem instanceof CompItem)){		testString = "";		writeString = '';		writeIndex = '// FILE CONTAINS THE FOLLOWING:'		activeComp = activeItem;		activeCompName = activeComp.name;		fps = activeComp.frameRate;		timeMS = activeComp.time * 1000;		compAnimStart = activeComp.workAreaStart * 1000;		compAnimDur = activeComp.workAreaDuration * 1000;		//writeString = activeCompName + "Track{ ";						var selectedLayers = activeComp.layers;						for (var i = 1; i <= selectedLayers.length; i++) {			// writeString += lineReturn + selectedLayers[i].name;			var numProps = selectedLayers[i].numProperties;						function findProperties(curItem) {			    var curLayer = selectedLayers[i];			    var report = "";			    findKeys(curLayer);			    //alert(report);			    return			}			 			function findKeys(property) {			   			   			    var propTypeString = "Unknown";			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }			 			    						    if (property.propertyType == PropertyType.PROPERTY && property.canVaryOverTime && property.numKeys > 0){			    	writeString += lineReturn + selectedLayers[i].name;			    	writeString += property.name + ' = {';			    	writeIndex += lineReturn + '// ' + selectedLayers[i].name + property.name;			    	for (var j = 1; j <= property.numKeys; j++) {			    		var t = (property.keyTime(j) * 1000) - compAnimStart;			    		var frameCounter = j-1;			    		if(property.keyValue(j)[0]){			    			writeString += lineReturn + lineTab  + frameCounter.toString() + ': [' + property.keyValue(j)[0].toString() + ", " + property.keyValue(j)[1].toString() + ", " + property.keyValue(j)[2].toString() + '],';			    		}else{			    			writeString += lineReturn + lineTab  + frameCounter.toString() + ': [' + property.keyValue(j).toString() + '],';			    		}			    					    	}			    	writeString = writeString.slice(0,-1);			    	writeString += lineReturn + '}' + lineReturn;			    }			 			   			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {			        			        for (var d = 1; d <= property.numProperties; d++) {			        	findKeys(property.property(d));			        }			    }						}						findProperties(activeComp);			 										}				editText.text = writeIndex + lineReturn + writeString;	}	}function exportPaths (){	var activeItem = app.project.activeItem;	activeComp = activeItem;	var fillColor = "";	var strokeColor = "";	var strokeWidth = "";	var isClosed, pathID, shapeLayerName;	var compWidth = activeItem.width;	var compHeight = activeItem.height;	var inTang = [];	var outTang = [];	var coOrds = [];		if(activeItem != null && (activeItem instanceof CompItem)){				writeString = '';		writeString += '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + lineReturn;		writeString += '<svg width="' + compWidth + 'px" height="' + compHeight + 'px" viewBox="0 0 ' + compWidth + ' ' + compHeight + '" version="1.1"';		writeString += ' xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' + lineReturn;		writeString += lineTab + '<title>' + activeComp.name + '</title>' + lineReturn;		writeString += lineTab + '<desc>Created by Gin Lane</desc>' + lineReturn;		activeComp = activeItem;				activeCompName = activeComp.name;		fps = activeComp.time * 1000;		compAnimStart = activeComp.workAreaStart * 1000;		compAnimDur = activeComp.workAreaDuration * 1000;		var selectedLayers = activeComp.layers;				for(var i = selectedLayers.length; i >= 1; i--){			function checkLayer(curItem) {			    var curLayer = selectedLayers[i];			    if(curLayer instanceof ShapeLayer){			    				    	findPath(curLayer);			    	writeSVG();			    				    }			    return			}			function findPath(property) {			   			   // alert("finding path");			    var propTypeString = "Unknown";			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY";  }			 				 	if(property instanceof ShapeLayer){			 		shapeLayerName = property.name;			 	}			   					var isFill = /^Fill/.test(property.name);				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){					for (var a = 1; a < property.numProperties; a++) {						if(property.property(a).name === "Color"){							fillColor = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);						}					}				}				var isStroke = /Stroke+ +\d/.test(property.name);				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){										for (var a = 1; a < property.numProperties; a++) {						if(property.property(a).name === "Color"){							strokeColor  = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);													}						if(property.property(a).name === "Stroke Width"){							strokeWidth = property.property(a).value;						}					}				}			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){			    	 			    	 isClosed = property.value.closed;			    	for (var j = 0; j < property.value.vertices.length; j++) {			    		coOrds.push(property.value.vertices[j]);			    		if(property.value.inTangents[j]){			    			var adjustIn = adjustTangent(property.value.vertices[j],property.value.inTangents[j]);			    			inTang.push(adjustIn);			    		}else{			    			inTang.push(null);			    		}			    		if(property.value.outTangents[j]){			    			var adjustOut = adjustTangent(property.value.vertices[j],property.value.outTangents[j]);			    			outTang.push(adjustOut);			    		}else{			    			outTang.push(null);			    		}			    	}				    }			 			   			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {			        			        for (var d = 1; d <= property.numProperties; d++) {			        	findPath(property.property(d));			        }			    }			}			function writeSVG(){								writeString += lineTab + '<g id="' + activeCompName + '" stroke="' + strokeColor.toString() + '" stroke-width="' + strokeWidth.toString() + '" fill="' + fillColor.toString() + '" fill-rule="evenodd">' + lineReturn;				writeString += lineTab + lineTab + '<path id="' + shapeLayerName + '" d="M';				//Write to SVG format, adjusting zero point				var firstCoORd;				for (var i = 0; i < coOrds.length; i++) {					var newCoords,newIn,newOut;					newCoords = adjustZero(Math.round(coOrds[i][0]),Math.round(coOrds[i][1]));					newOut = adjustZero(Math.round(outTang[i][0]),Math.round(outTang[i][1]));					if(i === coOrds.length - 1){						newIn = adjustZero(Math.round(inTang[0][0]),Math.round(inTang[0][1]));					}else{						newIn = adjustZero(Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]));					}					if(i === 0){						firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";					}					writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + " ";					writeString += 'C' + newOut[0].toString() + ',' + newOut[1].toString() + " ";					writeString += newIn[0].toString() + ',' + newIn[1].toString() + " ";					if(i === coOrds.length - 1 && isClosed){						writeString += firstCoORd;					}																			}				if(isClosed){					writeString += 'Z"';				}else{					writeString += '"';				}								writeString += '></path>'+lineReturn;				writeString += lineTab + '</g>' + lineReturn;								coOrds = [];				inTang = [];				outTang = [];			}				checkLayer(activeComp);		}		writeString += '</svg>';		editText.text = writeString;	}}function exportCanvasShape(){	var activeItem = app.project.activeItem;	activeComp = activeItem;	var fillColor = "";	var strokeColor = "";	var strokeWidth = "";	var isClosed, pathID, shapeLayerName;	var compWidth = activeItem.width;	var compHeight = activeItem.height;	var inTang = [];	var outTang = [];	var coOrds = [];	var solidColor = "#333";	//alert(activeComp.color);	if(activeItem != null && (activeItem instanceof CompItem)){				activeComp = activeItem;				activeCompName = activeComp.name;		fps = activeComp.time * 1000;		compAnimStart = activeComp.workAreaStart * 1000;		compAnimDur = activeComp.workAreaDuration * 1000;		var selectedLayers = activeComp.layers;		for(var i = selectedLayers.length; i >= 1; i--){					    var curLayer = selectedLayers[i];		   		    if(curLayer.matchName == 'ADBE AV Layer'){		    			    	solidColor = rgbToHex(curLayer.source.mainSource.color[0],curLayer.source.mainSource.color[1],curLayer.source.mainSource.color[2]);		    			    }			    					}		writeString = '';		writeString += '<!DOCTYPE HTML>' + lineReturn + '<html>' + lineReturn + createTab(1) + '<head>'+ lineReturn + createTab(2) + '<style>';		writeString += lineReturn + createTab(3) + 'body {margin:0px;padding:0px;background-color:'+solidColor+'}' + lineReturn + createTab(2) + '</style>';		writeString += lineReturn + createTab(1) + '</head>' + lineReturn + createTab(1) + '<body>' + lineReturn + createTab(2) + '<canvas id="' + activeComp.name + '" width="' + compWidth + '" height="' + compHeight + '"></canvas>';		writeString += lineReturn + createTab(2) + '<script>';		writeString += lineReturn + createTab(3) + 'function drawshape (shape, cntx){'+lineReturn+createTab(4)+				'if(cntx){'+lineReturn+createTab(5)+					'if(shape.lineWidth != ""){'+lineReturn+createTab(6)+						'cntx.lineWidth = shape.lineWidth;'+lineReturn+createTab(6)+						'cntx.strokeStyle = shape.lineColor;'+lineReturn+createTab(5)+					'}'+lineReturn+createTab(5)+					'if(shape.fillColor != ""){'+lineReturn+createTab(6)+						'cntx.fillStyle = shape.fillColor;'+lineReturn+createTab(5)+					'}'+lineReturn+createTab(5)+					'cntx.beginPath();'+lineReturn+createTab(5)+					'cntx.moveTo(shape.start[0],shape.start[1]);'+lineReturn+createTab(5)+					'for (var i = 0; i < shape.bezier.length; i++) {'+lineReturn+createTab(6)+						'if(shape.bezier[i].length === 6){'+lineReturn+createTab(7)+							'cntx.bezierCurveTo(shape.bezier[i][0],shape.bezier[i][1],shape.bezier[i][2],shape.bezier[i][3],shape.bezier[i][4],shape.bezier[i][5]);'+lineReturn+createTab(6)+						'}'+lineReturn+createTab(5)+						'}'+lineReturn+createTab(5)+					'if(shape.fillColor != ""){'+lineReturn+createTab(6)+						'cntx.fill();'+lineReturn+createTab(5)+					'}else{'+lineReturn+createTab(6)+						'cntx.stroke();'+lineReturn+createTab(5)+					'}'+lineReturn+createTab(4)+					'}'+lineReturn+createTab(3)+				'}';		writeString += lineReturn + createTab(3) + 'var canvas = document.getElementById("' + activeComp.name + '");' + lineReturn + createTab(3) + 'var context = canvas.getContext("2d");';				for(var i = selectedLayers.length; i >= 1; i--){			function checkLayer(curItem) {			    var curLayer = selectedLayers[i];			    if(curLayer instanceof ShapeLayer){			    				    	findPath(curLayer);			    	writeCanvas(curLayer);				    }			    			}			function findPath(property) {			   			   			    var propTypeString = "Unknown";			    if (property.propertyType == PropertyType.INDEXED_GROUP) { propTypeString = "INDEXED_GROUP"; }			    else if (property.propertyType == PropertyType.NAMED_GROUP) { propTypeString = "NAMED_GROUP"; }			    else if (property.propertyType == PropertyType.PROPERTY) { propTypeString = "PROPERTY"; }			 				 	if(property instanceof ShapeLayer){			 		shapeLayerName = removeSpace(property.name);			 	}			 	//Finds multiple shape groups within shape layer			 	if(property.propertyType == PropertyType.NAMED_GROUP && property.parentProperty){			 					 		if(property.parentProperty.name == 'Contents' && property.propertyDepth == 2){			 			alert(property.name);			 		}			 					 	}			   					var isFill = /^Fill/.test(property.name);				if(isFill && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){					for (var a = 1; a < property.numProperties; a++) {						if(property.property(a).name === "Color"){							fillColor = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);						}					}				}				var isStroke = /Stroke+ +\d/.test(property.name);				if(isStroke && (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP)){										for (var a = 1; a < property.numProperties; a++) {						if(property.property(a).name === "Color"){							strokeColor  = rgbToHex(property.property(a).value[0],property.property(a).value[1],property.property(a).value[2]);													}						if(property.property(a).name === "Stroke Width"){							strokeWidth = property.property(a).value;						}					}				}			    if (property.propertyType == PropertyType.PROPERTY && property.name === "Path"){			    	 			    	 isClosed = property.value.closed;			    	for (var j = 0; j < property.value.vertices.length; j++) {			    		coOrds.push(property.value.vertices[j]);			    		if(property.value.inTangents[j]){			    			var adjustIn = adjustTangentJS(property.value.vertices[j],property.value.inTangents[j]);			    			inTang.push(adjustIn);			    		}else{			    			inTang.push(null);			    		}			    		if(property.value.outTangents[j]){			    			var adjustOut = adjustTangentJS(property.value.vertices[j],property.value.outTangents[j]);			    			outTang.push(adjustOut);			    		}else{			    			outTang.push(null);			    		}			    	}				    }			 			   			    if (property.propertyType == PropertyType.INDEXED_GROUP || property.propertyType == PropertyType.NAMED_GROUP) {			        			        for (var d = 1; d <= property.numProperties; d++) {			        	findPath(property.property(d));			        }			    }			}			function writeCanvas(property){				writeString += lineReturn + createTab(3) + 'var ' + shapeLayerName + ' = { lineWidth: "' + strokeWidth.toString() + '", lineColor: "'				+ strokeColor + '", fillColor: "' + fillColor + '", start: [';				var firstCoORd;				for (var i = 0; i < coOrds.length-1; i++) {					var newCoords,newIn,newOut;										if(i === 0){						newCoords = adjustZerojs(activeItem,Math.round(coOrds[i][0]),Math.round(coOrds[i][1]),property);						firstCoORd = newCoords[0].toString() + ',' + newCoords[1].toString() + " ";						writeString += firstCoORd + '], bezier: [';						newCoords = adjustZerojs(activeItem,Math.round(coOrds[i+1][0]),Math.round(coOrds[i+1][1]),property);											}else{						newCoords = adjustZerojs(activeItem,Math.round(coOrds[i+1][0]),Math.round(coOrds[i+1][1]),property);											}					newOut = adjustZerojs(activeItem,Math.round(outTang[i][0]),Math.round(outTang[i][1]),property);					if(i === coOrds.length - 1){						newIn = adjustZerojs(activeItem,Math.round(inTang[0][0]),Math.round(inTang[0][1]),property);					}else{						newIn = adjustZerojs(activeItem,Math.round(inTang[i+1][0]),Math.round(inTang[i+1][1]),property);					}					writeString += '[' + newOut[0].toString() + ',' + newOut[1].toString() + ',';					writeString += newIn[0].toString() + ',' + newIn[1].toString() + ',';					writeString += newCoords[0].toString() + ',' + newCoords[1].toString() + '],';					if(i === coOrds.length - 1 && isClosed){						writeString += '[' + firstCoORd + ']';					}					}							writeString += ']};';				writeString += lineReturn + createTab(3) + 'drawshape(' + shapeLayerName + ',context);'				coOrds = [];				inTang = [];				outTang = [];			}				checkLayer(activeComp);		}		writeString += lineReturn + createTab(2) + '</script>' + lineReturn + createTab(1) + '</body>' + lineReturn + '</html>';		editText.text = writeString;	}}
